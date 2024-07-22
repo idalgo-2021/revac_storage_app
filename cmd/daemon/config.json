@@ -1,0 +1,17 @@
+{
+    "HTTPServerConfig": {
+        "host": "127.0.0.1",
+        "port": 8081
+    },
+    "dbConnectionConfig": {
+        "host": "127.0.0.1",
+        "port": 5432,
+        "user": "postgresadmin",
+        "password": "PostgresAdminPass",
+        "dbname": "postgres"
+    },
+    "ResumeServiceConfig": {
+        "controlQntResumesPerUserEnabled": true,
+        "maxResumesPerUser": 5
+    }
+}
