@@ -35,7 +35,7 @@ func (h *VacancyHandler) HandleGetVacancyById(w http.ResponseWriter, r *http.Req
 
 	vacancy, err := h.service.SGetVacancyById(r.Context(), parsedId)
 	if err != nil {
-		if err == service.ErrResumeNotFound {
+		if err == service.ErrVacancyNotFound {
 			http.Error(w, "Vacancy not found", http.StatusNotFound)
 		} else {
 			log.Printf("Error getting vacancy: %v", err)
@@ -81,7 +81,7 @@ func (h *VacancyHandler) HandleGetVacanciesByOwnerId(w http.ResponseWriter, r *h
 
 	vacancies, err := h.service.SGetVacanciesByOwnerId(r.Context(), owner_id)
 	if err != nil {
-		if err == service.ErrResumeNotFound {
+		if err == service.ErrVacancyNotFound {
 			http.Error(w, "Vacancies not found", http.StatusNotFound)
 		} else {
 			log.Printf("Error getting vacancies: %v", err)
@@ -100,13 +100,13 @@ func (h *VacancyHandler) HandleGetVacanciesByOwnerId(w http.ResponseWriter, r *h
 // Создать вакансию
 func (h *VacancyHandler) HandleCreateVacancy(w http.ResponseWriter, r *http.Request) {
 
-	var resume models.VacancyPrimary
-	if err := json.NewDecoder(r.Body).Decode(&resume); err != nil {
+	var vacancy models.VacancyPrimary
+	if err := json.NewDecoder(r.Body).Decode(&vacancy); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
-	id, err := h.service.SCreateVacancy(r.Context(), &resume)
+	id, err := h.service.SCreateVacancy(r.Context(), &vacancy)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -138,7 +138,7 @@ func (h *VacancyHandler) HandleDeleteVacancyById(w http.ResponseWriter, r *http.
 
 	err = h.service.SDeleteVacancyById(r.Context(), parsedId)
 	if err != nil {
-		if err == service.ErrResumeNotFound {
+		if err == service.ErrVacancyNotFound {
 			http.Error(w, "Vacancy not found", http.StatusNotFound)
 		} else {
 			log.Printf("Error deleting vacancy: %v", err)

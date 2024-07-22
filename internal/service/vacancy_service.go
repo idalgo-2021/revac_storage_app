@@ -62,7 +62,7 @@ func (s *vacancyService) SGetVacanciesByOwnerId(ctx context.Context, ownerId str
 	vacancies, err := s.repo.GetVacanciesByOwnerId(ctx, ownerId)
 	if err != nil {
 		if err == customErrors.ErrNotFound {
-			return nil, ErrResumeNotFound
+			return nil, ErrVacancyNotFound
 		}
 		return nil, err
 	}

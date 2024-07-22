@@ -21,7 +21,7 @@ type VacancyChange struct {
 	ID           uuid.UUID `json:"id"`
 	OwnerId      string    `json:"owner_id"`
 	UpdateTime   time.Time `json:"update_time"`
-	VacancyTitle string    `json:"resume_title"`
+	VacancyTitle string    `json:"vacancy_title"`
 	DataContent  string    `json:"data_content"`
 	IsActive     bool      `json:"is_active"`
 	IsDraft      bool      `json:"is_draft"`
