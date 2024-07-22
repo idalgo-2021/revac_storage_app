@@ -14,3 +14,4 @@ services:
       - "$DB_PORT:$DB_PORT"
     volumes:
       - ./.private/data/postgres:/var/lib/postgresql/data
+      - ./migrations/:/docker-entrypoint-initdb.d/
