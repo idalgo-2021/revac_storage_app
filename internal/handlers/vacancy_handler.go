@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"revac_storage_app/internal/models"
@@ -142,6 +143,41 @@ func (h *VacancyHandler) HandleDeleteVacancyById(w http.ResponseWriter, r *http.
 			http.Error(w, "Vacancy not found", http.StatusNotFound)
 		} else {
 			log.Printf("Error deleting vacancy: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *VacancyHandler) HandleUpdateVacancy(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "Missing id parameter", http.StatusBadRequest)
+		return
+	}
+
+	parsedId, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid id format", http.StatusBadRequest)
+		return
+	}
+
+	var vacancy models.VacancyChange
+	if err := json.NewDecoder(r.Body).Decode(&vacancy); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	vacancy.ID = parsedId
+
+	err = h.service.SUpdateVacancy(r.Context(), &vacancy)
+	if err != nil {
+		if errors.Is(err, service.ErrVacancyNotFound) {
+			http.Error(w, "Vacancy not found", http.StatusNotFound)
+		} else {
+			log.Printf("Error updating vacancy: %v", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
 		return

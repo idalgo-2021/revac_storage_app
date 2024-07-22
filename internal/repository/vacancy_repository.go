@@ -22,7 +22,7 @@ func NewVacancyRepository(db *sql.DB) VacancyRepository {
 	return &vacancyRepository{db: db}
 }
 
-func (r *vacancyRepository) CreateVacancy(ctx context.Context, infoData *models.VacancyPrimary) (string, error) {
+func (r *vacancyRepository) CreateVacancy(ctx context.Context, vacancy *models.VacancyPrimary) (string, error) {
 
 	query := `
 		INSERT INTO vacancies (owner_id, create_time, vacancy_title, data_content)
@@ -31,7 +31,7 @@ func (r *vacancyRepository) CreateVacancy(ctx context.Context, infoData *models.
 	`
 
 	var id string
-	err := r.db.QueryRowContext(ctx, query, infoData.OwnerId, infoData.CreateTime, infoData.VacancyTitle, infoData.DataContent).Scan(&id)
+	err := r.db.QueryRowContext(ctx, query, vacancy.OwnerId, vacancy.CreateTime, vacancy.VacancyTitle, vacancy.DataContent).Scan(&id)
 	if err != nil {
 		log.Printf("Failed to execute query: %v", err)
 		return "", err
@@ -96,5 +96,25 @@ func (r *vacancyRepository) DeleteVacancyById(ctx context.Context, id uuid.UUID)
 		return customErrors.ErrNotFound
 	}
 
+	return nil
+}
+
+func (r *vacancyRepository) UpdateVacancy(ctx context.Context, vacancy *models.VacancyChange) error {
+
+	query := `UPDATE vacancies SET owner_id = $1, update_time = $2, vacancy_title = $3, data_content = $4 WHERE id = $5`
+	result, err := r.db.ExecContext(ctx, query, vacancy.OwnerId, vacancy.UpdateTime, vacancy.VacancyTitle, vacancy.DataContent, vacancy.ID)
+	if err != nil {
+		log.Printf("Failed to update vacancy: %v", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("Failed to get rows affected: %v", err)
+		return err
+	}
+	if rowsAffected == 0 {
+		return customErrors.ErrNotFound
+	}
 	return nil
 }

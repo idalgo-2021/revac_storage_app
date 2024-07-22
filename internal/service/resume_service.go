@@ -25,7 +25,7 @@ func NewResumeService(repo repository.ResumeRepository, cfg config.Config) Resum
 	return &resumeService{repo: repo, cfg: cfg}
 }
 
-func (s *resumeService) SCreateResume(ctx context.Context, infoData *models.ResumePrimary) (string, error) {
+func (s *resumeService) SCreateResume(ctx context.Context, resume *models.ResumePrimary) (string, error) {
 
 	// Проверка общих параметров на количество резюме
 	ResumeServiceConfig := s.cfg.ResumeServiceConfig
@@ -36,21 +36,21 @@ func (s *resumeService) SCreateResume(ctx context.Context, infoData *models.Resu
 	}
 
 	// Проверка наличия данных
-	if infoData.OwnerId == "" || infoData.DataContent == "" || infoData.ResumeTitle == "" {
+	if resume.OwnerId == "" || resume.DataContent == "" || resume.ResumeTitle == "" {
 		return "", fmt.Errorf("missing required fields")
 	}
 
 	// Значения по умолчанию
-	infoData.CreateTime = time.Now().UTC()
-	infoData.IsActive = true
-	infoData.IsDraft = true
+	resume.CreateTime = time.Now().UTC()
+	resume.IsActive = true
+	resume.IsDraft = true
 
 	var id string
 	var err error
 	if ResumeServiceConfig.ControlQntResumesPerUserEnabled {
-		id, err = s.repo.CreateResumeWithQntControl(ctx, ResumeServiceConfig.MaxResumesPerUser, infoData)
+		id, err = s.repo.CreateResumeWithQntControl(ctx, ResumeServiceConfig.MaxResumesPerUser, resume)
 	} else {
-		id, err = s.repo.CreateResume(ctx, infoData)
+		id, err = s.repo.CreateResume(ctx, resume)
 	}
 	if err != nil {
 		return "", fmt.Errorf("failed to create resume: %w", err)
@@ -91,6 +91,17 @@ func (s *resumeService) SDeleteResumeById(ctx context.Context, id uuid.UUID) err
 			return ErrResumeNotFound
 		}
 		return err
+	}
+	return nil
+}
+
+func (s *resumeService) SUpdateResume(ctx context.Context, resume *models.ResumeChange) error {
+	err := s.repo.UpdateResume(ctx, resume)
+	if err != nil {
+		if errors.Is(err, customErrors.ErrNotFound) {
+			return fmt.Errorf("resume not found: %w", err)
+		}
+		return fmt.Errorf("failed to update resume: %w", err)
 	}
 	return nil
 }

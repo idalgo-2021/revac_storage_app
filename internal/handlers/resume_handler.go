@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"revac_storage_app/internal/models"
@@ -142,6 +143,42 @@ func (h *ResumeHandler) HandleDeleteResumeById(w http.ResponseWriter, r *http.Re
 			http.Error(w, "Resume not found", http.StatusNotFound)
 		} else {
 			log.Printf("Error deleting resume: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// Обновить резюме
+func (h *ResumeHandler) HandleUpdateResume(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "Missing id parameter", http.StatusBadRequest)
+		return
+	}
+
+	parsedId, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid id format", http.StatusBadRequest)
+		return
+	}
+
+	var resume models.ResumeChange
+	if err := json.NewDecoder(r.Body).Decode(&resume); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	resume.ID = parsedId
+
+	err = h.service.SUpdateResume(r.Context(), &resume)
+	if err != nil {
+		if errors.Is(err, service.ErrResumeNotFound) {
+			http.Error(w, "Resume not found", http.StatusNotFound)
+		} else {
+			log.Printf("Error updating resume: %v", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
 		return

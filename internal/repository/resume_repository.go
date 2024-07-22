@@ -21,7 +21,7 @@ func NewResumeRepository(db *sql.DB) ResumeRepository {
 	return &resumeRepository{db: db}
 }
 
-func (r *resumeRepository) CreateResume(ctx context.Context, infoData *models.ResumePrimary) (string, error) {
+func (r *resumeRepository) CreateResume(ctx context.Context, resume *models.ResumePrimary) (string, error) {
 
 	query := `
 		INSERT INTO resumes (owner_id, create_time, resume_title, data_content)
@@ -30,7 +30,7 @@ func (r *resumeRepository) CreateResume(ctx context.Context, infoData *models.Re
 	`
 
 	var id string
-	err := r.db.QueryRowContext(ctx, query, infoData.OwnerId, infoData.CreateTime, infoData.ResumeTitle, infoData.DataContent).Scan(&id)
+	err := r.db.QueryRowContext(ctx, query, resume.OwnerId, resume.CreateTime, resume.ResumeTitle, resume.DataContent).Scan(&id)
 	if err != nil {
 		log.Printf("Failed to execute query: %v", err)
 		return "", err
@@ -38,7 +38,7 @@ func (r *resumeRepository) CreateResume(ctx context.Context, infoData *models.Re
 	return id, nil
 }
 
-func (r *resumeRepository) CreateResumeWithQntControl(ctx context.Context, MaxResumesPerUser int, infoData *models.ResumePrimary) (string, error) {
+func (r *resumeRepository) CreateResumeWithQntControl(ctx context.Context, MaxResumesPerUser int, resume *models.ResumePrimary) (string, error) {
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -58,7 +58,7 @@ func (r *resumeRepository) CreateResumeWithQntControl(ctx context.Context, MaxRe
 	WHERE resume_count.cnt < $5
 	RETURNING id;`
 
-	row := tx.QueryRowContext(ctx, query, infoData.OwnerId, infoData.CreateTime, infoData.ResumeTitle, infoData.DataContent, MaxResumesPerUser)
+	row := tx.QueryRowContext(ctx, query, resume.OwnerId, resume.CreateTime, resume.ResumeTitle, resume.DataContent, MaxResumesPerUser)
 	var id string
 	if err := row.Scan(&id); err != nil {
 		if err == sql.ErrNoRows {
@@ -135,5 +135,25 @@ func (r *resumeRepository) DeleteResumeById(ctx context.Context, id uuid.UUID) e
 		return customErrors.ErrNotFound
 	}
 
+	return nil
+}
+
+func (r *resumeRepository) UpdateResume(ctx context.Context, resume *models.ResumeChange) error {
+
+	query := `UPDATE resumes SET owner_id = $1, update_time = $2, resume_title = $3, data_content = $4 WHERE id = $5`
+	result, err := r.db.ExecContext(ctx, query, resume.OwnerId, resume.UpdateTime, resume.ResumeTitle, resume.DataContent, resume.ID)
+	if err != nil {
+		log.Printf("Failed to update resume: %v", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("Failed to get rows affected: %v", err)
+		return err
+	}
+	if rowsAffected == 0 {
+		return customErrors.ErrNotFound
+	}
 	return nil
 }

@@ -25,19 +25,19 @@ func NewVacancyService(repo repository.VacancyRepository, cfg config.Config) Vac
 	return &vacancyService{repo: repo, cfg: cfg}
 }
 
-func (s *vacancyService) SCreateVacancy(ctx context.Context, infoData *models.VacancyPrimary) (string, error) {
+func (s *vacancyService) SCreateVacancy(ctx context.Context, vacancy *models.VacancyPrimary) (string, error) {
 
 	// Проверка наличия данных
-	if infoData.OwnerId == "" || infoData.DataContent == "" || infoData.VacancyTitle == "" {
+	if vacancy.OwnerId == "" || vacancy.DataContent == "" || vacancy.VacancyTitle == "" {
 		return "", fmt.Errorf("missing required fields")
 	}
 
 	// Значения по умолчанию
-	infoData.CreateTime = time.Now().UTC()
-	infoData.IsActive = true
-	infoData.IsDraft = true
+	vacancy.CreateTime = time.Now().UTC()
+	vacancy.IsActive = true
+	vacancy.IsDraft = true
 
-	id, err := s.repo.CreateVacancy(ctx, infoData)
+	id, err := s.repo.CreateVacancy(ctx, vacancy)
 	if err != nil {
 		return "", fmt.Errorf("failed to create vacancy: %w", err)
 	}
@@ -80,4 +80,15 @@ func (s *vacancyService) SDeleteVacancyById(ctx context.Context, id uuid.UUID) e
 	}
 	return nil
 
+}
+
+func (s *vacancyService) SUpdateVacancy(ctx context.Context, vacancy *models.VacancyChange) error {
+	err := s.repo.UpdateVacancy(ctx, vacancy)
+	if err != nil {
+		if errors.Is(err, customErrors.ErrNotFound) {
+			return fmt.Errorf("vacancy not found: %w", err)
+		}
+		return fmt.Errorf("failed to update resume: %w", err)
+	}
+	return nil
 }
